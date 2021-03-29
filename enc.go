@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"flag"
-	"os"
-	"io"
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"bytes"
+	"flag"
+	"fmt"
+	"io"
+	"os"
 )
 
 var inputFilename string
@@ -33,7 +33,7 @@ func removePadding(buf *[]byte, blockSize int) {
 
 func padPlainText(buffer *[]byte, blockSize int) {
 	paddingLength := blockSize - (len(*buffer) % blockSize)
-	tempBuffer := make([]byte, paddingLength + blockSize)
+	tempBuffer := make([]byte, paddingLength+blockSize)
 
 	tempBuffer[0] = uint8(0x80)
 	for i := 1; i < len(tempBuffer); i++ {
@@ -44,7 +44,7 @@ func padPlainText(buffer *[]byte, blockSize int) {
 
 func readKeyFile(buffer []byte, filename string) (int, error) {
 	file, err := os.Open(filename)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println(err)
 		return 0, err
 	}
@@ -54,13 +54,13 @@ func readKeyFile(buffer []byte, filename string) (int, error) {
 		fmt.Println(err)
 		return 0, err
 	}
-	
+
 	return n, nil
 }
 
 func readContentFile(filename string) ([]byte, error) {
 	file, err := os.Open(filename)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func readContentFile(filename string) ([]byte, error) {
 	buffer := make([]byte, 8)
 	fileText := make([]byte, 0, 20)
 	for {
-		n, err := file.Read(buffer) 
-		if (err == io.EOF) {
+		n, err := file.Read(buffer)
+		if err == io.EOF {
 			break
 		} else {
 			fileText = append(fileText, buffer[:n]...)
@@ -101,7 +101,7 @@ func init() {
 	flag.StringVar(&keyFilename, "kfile", "", "path of keyfile")
 	flag.BoolVar(&isGenKey, "genkey", false, "if set, encryptor will generate a new key, if the -kfile flag is also used, the key will be written to the provided file")
 	flag.BoolVar(&isDecrypt, "decrypt", false, "if set, encryptor will decrypt input, default setting is encryption")
-	
+
 	flag.Parse()
 }
 
@@ -131,7 +131,7 @@ func main() {
 			return
 		}
 	}
-	
+
 	cipherBlock, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println(err)
@@ -145,7 +145,7 @@ func main() {
 		stat, _ := os.Stdin.Stat()
 		size := stat.Size()
 		if size <= 0 {
-			fmt.Println("input must not be empty, use parameter flag '-in' send input via stdin")
+			fmt.Println("input must not be empty, use parameter flag '-in' or send input via stdin")
 			return
 		}
 		io.Copy(buffer, os.Stdin)
@@ -155,7 +155,7 @@ func main() {
 	}
 
 	if isDecrypt {
-		output = make([]byte, len(input) - cipherBlock.BlockSize())
+		output = make([]byte, len(input)-cipherBlock.BlockSize())
 
 		iv := input[:cipherBlock.BlockSize()]
 		input = input[cipherBlock.BlockSize():]
@@ -166,7 +166,7 @@ func main() {
 		removePadding(&output, cipherBlock.BlockSize())
 	} else {
 		padPlainText(&input, cipherBlock.BlockSize())
-		output = make([]byte, len(input) + cipherBlock.BlockSize())
+		output = make([]byte, len(input)+cipherBlock.BlockSize())
 
 		iv := output[:cipherBlock.BlockSize()]
 		rand.Reader.Read(iv)
